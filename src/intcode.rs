@@ -24,6 +24,10 @@ impl State {
 
         state
     }
+
+    pub fn run(&mut self) {
+        while let Next::Continue = exec_op(self) {}
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -114,11 +118,16 @@ pub fn exec_op(state: &mut State) -> Next {
         },
         3 => {
             let addr = addr_from_param(&state, *op, 1);
-            let value = state.inputs.recv().unwrap();
             //println!("[{}] Got a {} from the input channel", state.id, value);
-            state.program.insert(addr, value);
-            state.pc += 2;
-            Next::Continue
+            match state.inputs.recv() {
+                Ok(value) => {
+                    state.program.insert(addr, value);
+                    state.pc += 2;
+                    Next::Continue
+                },
+                _ => { Next::Exit(None) }
+
+            }
         },
         4 => {
             let value = value_from_param(&state, *op, 1);
